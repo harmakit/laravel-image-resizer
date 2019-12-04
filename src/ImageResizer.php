@@ -59,19 +59,18 @@ class ImageResizer
         $interConfig = config('image');
         $this->interImage = new InterImage($interConfig);
         $this->guzzleHttp = new \GuzzleHttp\Client([
-                        'headers' => [
-                            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36',
-                            'Accept'     => 'image/png,image/gif,image/jpeg,image/pjpeg;q=0.9,text/html,application/xhtml+xml,application/xml;q=0.8,*.*;q=0.5'
-                        ]
-                    ]);
+            'headers' => [
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36',
+                'Accept' => 'image/png,image/gif,image/jpeg,image/pjpeg;q=0.9,text/html,application/xhtml+xml,application/xml;q=0.8,*.*;q=0.5'
+            ]
+        ]);
 
         // Set base_url to retrive the files when get method called
-        if(empty($this->config['base_url']) || in_array(config('app.env'), $this->config['ignore_environments'])) {
-            $this->baseUrl = url('').'/';
+        if (empty($this->config['base_url']) || in_array(config('app.env'), $this->config['ignore_environments'])) {
+            $this->baseUrl = url('');
             $this->fileExistCheck = true;
-        }
-        else {
-            $this->baseUrl = $this->config['base_url'] . '/';
+        } else {
+            $this->baseUrl = $this->config['base_url'];
             $this->fileExistCheck = false;
         }
     }
@@ -95,7 +94,7 @@ class ImageResizer
     {
         $valid_image_extensions = $this->config['valid_extensions'];
         $extension = strtolower(pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION));
-        if(in_array($extension, $valid_image_extensions)) {
+        if (in_array($extension, $valid_image_extensions)) {
             return $extension;
         }
         return false;
@@ -135,8 +134,8 @@ class ImageResizer
     protected function copyFile($input, $name, $location)
     {
         //dd($input);
-        if(($extension = $this->hasImageExtension($input)) === false && !exif_imagetype($input)) {
-            if($this->config['clear_invalid_uploads']){
+        if (($extension = $this->hasImageExtension($input)) === false && !exif_imagetype($input)) {
+            if ($this->config['clear_invalid_uploads']) {
                 \File::delete($input);
             }
 
@@ -145,9 +144,11 @@ class ImageResizer
 
 
         // Default Extension will be jpg
-        if(!$extension) $extension = 'jpg';
-        $filename = $this->generateFilename($name).'.'.$extension;
-        $fullpath = $location .'/'. $filename;
+        if (!$extension) {
+            $extension = 'jpg';
+        }
+        $filename = $this->generateFilename($name) . '.' . $extension;
+        $fullpath = $location . '/' . $filename;
 
         \File::copy($input, $fullpath);
 
@@ -165,7 +166,7 @@ class ImageResizer
     public function generateFilename($name)
     {
         $slug = str_slug($name);
-        if($this->config['append_random_characters']) {
+        if ($this->config['append_random_characters']) {
             $slug .= '-' . str_random(7);
         }
         return $slug;
@@ -187,17 +188,19 @@ class ImageResizer
         // thus we need to seperate a proper extension from it
         $extension = $this->hasImageExtension($input);
         // Default Extension will be jpg
-        if(!$extension) $extension = 'jpg';
+        if (!$extension) {
+            $extension = 'jpg';
+        }
 
-        $filename = $this->generateFilename($name).'.'.$extension;
+        $filename = $this->generateFilename($name) . '.' . $extension;
 
-        $fullpath = $location .'/'. $filename;
+        $fullpath = $location . '/' . $filename;
 
         // Get page using HTTP GET Request as loading copying directly causes 403 error sometimes in different cases of redirect
         try {
             $response = $this->guzzleHttp->get($input, [
-                    'sink' => $fullpath
-                ]);
+                'sink' => $fullpath
+            ]);
         } catch (\Exception $e) {
             throw new \TarunMangukiya\ImageResizer\Exception\InvalidInputException("Invalid Input for Image Resizer.");
         }
@@ -205,8 +208,8 @@ class ImageResizer
         $image_file = new ImageFile;
         $image_file = $image_file->setFileInfoFromPath($fullpath);
 
-        if(!exif_imagetype($fullpath)) {
-            if($this->config['clear_invalid_uploads']){
+        if (!exif_imagetype($fullpath)) {
+            if ($this->config['clear_invalid_uploads']) {
                 \File::delete($fullpath);
             }
 
@@ -231,36 +234,32 @@ class ImageResizer
         $img->orientate();
 
         // If crop dimenssion is relative
-        if(count($crop) == 4)
-        {
+        if (count($crop) == 4) {
             // ($width, $height, $x, $y)
             $img->crop($crop[0], $crop[1], $crop[2], $crop[3]);
-        }
-        // If crop dimenssion is absolute
-        else if(count($crop) == 2)
-        {
-            // ($width, $height)
-            $img->crop($crop[0], $crop[1]);
-        }
-        else
-        {
-            throw new \TarunMangukiya\ImageResizer\Exception\InvalidCropDimensionException('Invalid Crop Dimensions provided.');
+        } // If crop dimenssion is absolute
+        else {
+            if (count($crop) == 2) {
+                // ($width, $height)
+                $img->crop($crop[0], $crop[1]);
+            } else {
+                throw new \TarunMangukiya\ImageResizer\Exception\InvalidCropDimensionException('Invalid Crop Dimensions provided.');
+            }
         }
 
         // Rotate Image
-        if($rotate !== null){
-            if(count($rotate) == 2) {
+        if ($rotate !== null) {
+            if (count($rotate) == 2) {
                 $img->rotate($rotate[0], $rotate[1]);
-            }
-            else{
+            } else {
                 $img->rotate($rotate[0]);
             }
         }
 
         // Generate Real Path for the resizing input
-        $location = $type_config['original'] .'/'. $original_file->getBaseName();
+        $location = $type_config['original'] . '/' . $original_file->getBaseName();
         // finally we save the image as a new file
-        $img->save( $location );
+        $img->save($location);
         $img->destroy();
 
         $file = new ImageFile;
@@ -278,55 +277,50 @@ class ImageResizer
      */
     public function upload($type, $input, $name, $crop = null, $rotate = null, $override_config = [])
     {
-        if(strlen($name) > 255)
+        if (strlen($name) > 255) {
             throw new \TarunMangukiya\ImageResizer\Exception\TooLongFileNameException("Error Processing Request", 1);
+        }
 
         // Get Config for the current Image type
         $type_config = ImageResizerConfig::getTypeConfig($type, $override_config);
         $crop_enabled = $type_config['crop']['enabled'];
 
         // Get the original save location according to config
-        if($crop_enabled && null !== $crop) {
+        if ($crop_enabled && null !== $crop) {
             $original_location = array_key_exists('uncropped_image', $type_config['crop']) ? $type_config['crop']['uncropped_image'] : $type_config['original'];
-        }
-        else {
+        } else {
             $original_location = $type_config['original'];
         }
 
         // Check input type is $_FILES input name or local file or url
 
         // Check for Input File
-        if(\Request::hasFile($input)) {
+        if (\Request::hasFile($input)) {
             $original_file = $this->moveUploadedFile($input, $name, $original_location);
-        }
-        // Check if file exists locally
+        } // Check if file exists locally
         elseif (file_exists($input)) {
             $original_file = $this->copyFile($input, $name, $original_location);
-        }
-        // Check if input is url then fetch image from online
-        elseif (filter_var($input, FILTER_VALIDATE_URL) !== FALSE) {
+        } // Check if input is url then fetch image from online
+        elseif (filter_var($input, FILTER_VALIDATE_URL) !== false) {
             $original_file = $this->transferURLFile($input, $name, $original_location);
-        }
-        else {
+        } else {
             throw new \TarunMangukiya\ImageResizer\Exception\InvalidInputException("Invalid Input for Image Resizer.");
         }
 
         // crop the image if enabled
-        if($crop_enabled && null !== $crop) {
+        if ($crop_enabled && null !== $crop) {
             $file = $this->transformImage($original_file, $type_config, $crop, $rotate);
-        }
-        else{
+        } else {
             $file = $original_file;
         }
 
         // Check if there is no resize of files
-        if(count($type_config['sizes'])) {
+        if (count($type_config['sizes'])) {
             $job = new ResizeImages($file, $type_config);
             // Check if we have to queue the resize of the image
-            if($this->config['queue']){
+            if ($this->config['queue']) {
                 \Queue::pushOn($this->config['queue_name'], $job);
-            }
-            else {
+            } else {
                 $job->handle();
             }
         }
@@ -345,7 +339,7 @@ class ImageResizer
     {
         $public_file = $this->getPublicPath($type, $size, $basename);
         $public_file = str_replace(base_path(), '', $public_file);
-        return $this->baseUrl.$public_file;
+        return $this->baseUrl . $public_file;
     }
 
     /**
@@ -363,15 +357,17 @@ class ImageResizer
         $files = $this->getOutputPaths($type, $size, $basename);
         extract($files);
 
-        if(file_exists($compiled_file)){
+        if (file_exists($compiled_file)) {
             return url($public_file);
-        }
-        else if($config['dynamic_generate'] && $size != 'original' && file_exists($original_file)){
-            $url = "resource-generate-image?filename=".urlencode($basename)."&type=".urlencode($type)."&size=".urlencode($size);
-            return url($url);
-        }
-        else if(isset($type_config['default'])){
-            return url($config['types'][$type]['default']);
+        } else {
+            if ($config['dynamic_generate'] && $size != 'original' && file_exists($original_file)) {
+                $url = "resource-generate-image?filename=" . urlencode($basename) . "&type=" . urlencode($type) . "&size=" . urlencode($size);
+                return url($url);
+            } else {
+                if (isset($type_config['default'])) {
+                    return url($config['types'][$type]['default']);
+                }
+            }
         }
     }
 
@@ -388,7 +384,7 @@ class ImageResizer
 
         //$type = pathinfo($compiled_file, PATHINFO_EXTENSION);
 
-        $type = (string) $this->interImage->make($compiled_file)->mime();
+        $type = (string)$this->interImage->make($compiled_file)->mime();
         // encode('data-url');
         $data = file_get_contents($compiled_file);
         $base64 = 'data:' . $type . ';base64,' . base64_encode($data);
@@ -413,16 +409,18 @@ class ImageResizer
 
         // If user has set to have custom base_url, in case of CDN or other public storage then we won't be able to check its existance, return $public_file only in those cases
 
-        if($this->fileExistCheck) {
-            if(file_exists($compiled_file)){
+        if ($this->fileExistCheck) {
+            if (file_exists($compiled_file)) {
                 return $public_file;
-            }
-            else if($config['dynamic_generate'] && $size != 'original' && file_exists($original_file)){
-                $url = "resource-generate-image?filename=".urlencode($basename)."&type=".urlencode($type)."&size=".urlencode($size);
-                return $url;
-            }
-            else if(isset($type_config['default'])){
-                return $config['types'][$type]['default'];
+            } else {
+                if ($config['dynamic_generate'] && $size != 'original' && file_exists($original_file)) {
+                    $url = "resource-generate-image?filename=" . urlencode($basename) . "&type=" . urlencode($type) . "&size=" . urlencode($size);
+                    return $url;
+                } else {
+                    if (isset($type_config['default'])) {
+                        return $config['types'][$type]['default'];
+                    }
+                }
             }
         }
 
@@ -449,15 +447,11 @@ class ImageResizer
         $original_file = "$original/$basename";
 
         // Check if user wants the original Image
-        if(empty($basename)) {
+        if (empty($basename)) {
             $compiled_file = $public_file = null;
-        }
-        elseif($size == 'original')
-        {
+        } elseif ($size == 'original') {
             $compiled_file = $public_file = $original_file;
-        }
-        else
-        {
+        } else {
             // Get Configurations for specific size
             $s = $type_config['sizes'][$size];
             $width = $s[0];
@@ -465,20 +459,21 @@ class ImageResizer
 
             // File Name match
             $pathinfo = pathinfo($basename);
-            $filename = isset($pathinfo['filename'])?$pathinfo['filename']:'';
-            $file_extension = isset($pathinfo['extension'])?$pathinfo['extension']:'';
+            $filename = isset($pathinfo['filename']) ? $pathinfo['filename'] : '';
+            $file_extension = isset($pathinfo['extension']) ? $pathinfo['extension'] : '';
 
             // Match Proper Extension
             $extension = $s[3];
-            if($extension == 'original') $extension = $file_extension;
+            if ($extension == 'original') {
+                $extension = $file_extension;
+            }
 
             $compiled_file = "{$compiled_path}/{$size}/{$filename}-{$width}x{$height}.{$extension}";
 
-            if(!empty($type_config['public'])) {
+            if (!empty($type_config['public'])) {
                 $public = $type_config['public'];
                 $public_file = "{$public}/{$size}/{$filename}-{$width}x{$height}.{$extension}";
-            }
-            else {
+            } else {
                 $public_file = $compiled_file;
             }
         }
@@ -501,14 +496,14 @@ class ImageResizer
             //Create Directory for Original Folders
             $path = $type['original'];
             if (!\File::exists($path)) {
-              \File::makeDirectory($path, 0755, true, true);
+                \File::makeDirectory($path, 0755, true, true);
             }
 
             //Create Directory for All Target Folders
             foreach ($sizes as $key => $size) {
-                $path = $type['compiled'].'/'.$key;
+                $path = $type['compiled'] . '/' . $key;
                 if (!\File::exists($path)) {
-                  \File::makeDirectory($path, 0755, true, true);
+                    \File::makeDirectory($path, 0755, true, true);
                 }
             }
         }
