@@ -344,6 +344,7 @@ class ImageResizer
     public function get($type, $size, $basename)
     {
         $public_file = $this->getPublicPath($type, $size, $basename);
+        $public_file = str_replace(base_path(), '', $public_file);
         return $this->baseUrl.$public_file;
     }
 
