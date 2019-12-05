@@ -1,6 +1,5 @@
 <?php namespace TarunMangukiya\ImageResizer\Commands;
 
-use App\Jobs\Job;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Bus\SelfHandling;
@@ -8,6 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 
 use Intervention\Image\ImageManager as InterImage;
 use TarunMangukiya\ImageResizer\ImageFile;
+use TarunMangukiya\ImageResizer\Jobs\Job;
 
 class ResizeImages extends Job implements ShouldQueue
 {
