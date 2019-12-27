@@ -165,9 +165,9 @@ class ImageResizer
      */
     public function generateFilename($name)
     {
-        $slug = str_slug($name);
+        $slug = \Str::slug($name);
         if ($this->config['append_random_characters']) {
-            $slug .= '-' . str_random(7);
+            $slug .= '-' . \Str::random(7);
         }
         return $slug;
     }
