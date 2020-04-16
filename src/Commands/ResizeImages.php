@@ -120,6 +120,12 @@ class ResizeImages extends Job implements ShouldQueue
     {
         $img = $this->interImage->make($fullpath);
 
+        if ($size[3] === 'jpeg' || $size[3] === 'jpg') {
+            $jpg = \Image::canvas($img->width(), $img->height(), '#ffffff');
+            $jpg->insert($img);
+            $img = $jpg;
+        }
+
         // Reset Image Rotation before doing any activity
         $img->orientate();
 
