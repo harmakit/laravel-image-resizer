@@ -226,24 +226,43 @@ class ImageResizer
      * @param array|null $rotate
      * @return ImageFile instance
      */
-    public function transformImage($original_file, $type_config, $crop, $rotate = null)
+    public function transformImage($original_file, $type_config, $crop, $rotate = null, $maxSizes = null, $quality = null)
     {
         $img = $this->interImage->make($original_file->fullpath);
 
         // Reset Image Rotation before doing any activity
         $img->orientate();
 
-        // If crop dimenssion is relative
-        if (count($crop) == 4) {
-            // ($width, $height, $x, $y)
-            $img->crop($crop[0], $crop[1], $crop[2], $crop[3]);
-        } // If crop dimenssion is absolute
-        else {
-            if (count($crop) == 2) {
-                // ($width, $height)
-                $img->crop($crop[0], $crop[1]);
+        if ($maxSizes !== null) {
+            $maxWidth = $maxSizes[0];
+            $maxHeight = $maxSizes[0];
+            if (count($maxSizes) > 1) {
+                $maxHeight = $maxSizes[1];
+            }
+            if ($img->width() > $img->height()) {
+                if ($img->width() > $maxWidth) {
+                    $img->widen($maxWidth);
+                }
             } else {
-                throw new \TarunMangukiya\ImageResizer\Exception\InvalidCropDimensionException('Invalid Crop Dimensions provided.');
+                if ($img->height() > $maxHeight) {
+                    $img->heighten($maxHeight);
+                }
+            }
+        }
+
+        if ($crop !== null) {
+            // If crop dimenssion is relative
+            if (count($crop) == 4) {
+                // ($width, $height, $x, $y)
+                $img->crop($crop[0], $crop[1], $crop[2], $crop[3]);
+            } // If crop dimenssion is absolute
+            else {
+                if (count($crop) == 2) {
+                    // ($width, $height)
+                    $img->crop($crop[0], $crop[1]);
+                } else {
+                    throw new \TarunMangukiya\ImageResizer\Exception\InvalidCropDimensionException('Invalid Crop Dimensions provided.');
+                }
             }
         }
 
@@ -259,7 +278,7 @@ class ImageResizer
         // Generate Real Path for the resizing input
         $location = $type_config['original'] . '/' . $original_file->getBaseName();
         // finally we save the image as a new file
-        $img->save($location);
+        $img->save($location, $quality);
         $img->destroy();
 
         $file = new ImageFile;
@@ -275,7 +294,7 @@ class ImageResizer
      * @param array|null $rotate
      * @return ImageFile instance
      */
-    public function upload($type, $input, $name, $crop = null, $rotate = null, $override_config = [])
+    public function upload($type, $input, $name, $crop = null, $rotate = null, $override_config = [], $maxSizes = null, $quality = null)
     {
         if (strlen($name) > 255) {
             throw new \TarunMangukiya\ImageResizer\Exception\TooLongFileNameException("Error Processing Request", 1);
@@ -308,8 +327,8 @@ class ImageResizer
         }
 
         // crop the image if enabled
-        if ($crop_enabled && null !== $crop) {
-            $file = $this->transformImage($original_file, $type_config, $crop, $rotate);
+        if (($crop_enabled && null !== $crop) || $maxSizes || $quality) {
+            $file = $this->transformImage($original_file, $type_config, $crop, $rotate, $maxSizes, $quality);
         } else {
             $file = $original_file;
         }
