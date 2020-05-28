@@ -239,14 +239,11 @@ class ImageResizer
             if (count($maxSizes) > 1) {
                 $maxHeight = $maxSizes[1];
             }
-            if ($img->width() > $img->height()) {
-                if ($img->width() > $maxWidth) {
-                    $img->widen($maxWidth);
-                }
-            } else {
-                if ($img->height() > $maxHeight) {
-                    $img->heighten($maxHeight);
-                }
+            if ($img->width() > $maxWidth) {
+                $img->widen($maxWidth);
+            }
+            if ($img->height() > $maxHeight) {
+                $img->heighten($maxHeight);
             }
         }
 
