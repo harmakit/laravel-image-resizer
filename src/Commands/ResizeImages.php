@@ -12,7 +12,10 @@ use TarunMangukiya\ImageResizer\Jobs\Job;
 class ResizeImages extends Job implements ShouldQueue
 {
 
-	use InteractsWithQueue, SerializesModels;
+    public const FIT_CROP = 0;
+    public const FIT_ADD_FIELDS = 1;
+
+    use InteractsWithQueue, SerializesModels;
 
 	/**
 	 * Image file to be resized
@@ -93,7 +96,7 @@ class ResizeImages extends Job implements ShouldQueue
             }
             else{
                 // resize normal non-animated files
-                $this->resizeImage($this->imageFile->fullpath, $target, $size, $folder);
+                $this->resizeImage($this->imageFile->fullpath, $target, $size, $folder, $this->type_config);
             }
         }
 
@@ -114,9 +117,10 @@ class ResizeImages extends Job implements ShouldQueue
      * @param string $target
      * @param array $size
      * @param string|null $size_string
+     * @param array $type_config
      * @return void
      */
-    public function resizeImage($fullpath, $target, $size, $size_string = null)
+    public function resizeImage($fullpath, $target, $size, $size_string = null, $type_config = [])
     {
         $img = $this->interImage->make($fullpath);
 
@@ -138,10 +142,23 @@ class ResizeImages extends Job implements ShouldQueue
         elseif ($size[2] == 'stretch') {
             // Stretch Image
             $img->resize($size[0], $size[1]);
-        }
-        else {
+        } else {
             // Default Fit
-            $img->fit($size[0], $size[1]);
+            if ($type_config && isset($type_config['fit_mode']) && $type_config['fit_mode'] === self::FIT_ADD_FIELDS) {
+                $canvas = \Image::canvas($size[0], $size[1], '#ffffff');
+                if ($img->width() / $img->height() < $canvas->width() / $canvas->height()) {
+                    $img->resize(null, $canvas->height(), function ($constraint) {
+                        $constraint->aspectRatio();
+                    });
+                } else {
+                    $img->resize($canvas->width(), null, function ($constraint) {
+                        $constraint->aspectRatio();
+                    });
+                }
+                $img = $canvas->insert($img, 'center');
+            } else {
+                $img->fit($size[0], $size[1]);
+            }
         }
 
         // Check if we need to add watermark to the image

@@ -2,7 +2,7 @@
     "name": "harmakit/tarunmangukiya-laravel-image-resizer",
     "description": "Laravel 5 Package for Image uploading, auto-resizing and retriving library.",
     "require": {
-        "php": ">=5.4.0",
+        "php": ">=7.1",
         "intervention/image": "^2.3",
         "guzzlehttp/guzzle": "*"
     },
