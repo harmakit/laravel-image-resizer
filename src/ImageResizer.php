@@ -291,7 +291,7 @@ class ImageResizer
      * @param array|null $rotate
      * @return ImageFile instance
      */
-    public function upload($type, $input, $name, $crop = null, $rotate = null, $override_config = [], $maxSizes = null, $quality = null)
+    public function upload($type, $input, $name, $crop = null, $rotate = null, $override_config = [], $maxSizes = null, $quality = null, $queue = null)
     {
         if (strlen($name) > 255) {
             throw new \TarunMangukiya\ImageResizer\Exception\TooLongFileNameException("Error Processing Request", 1);
@@ -334,8 +334,8 @@ class ImageResizer
         if (count($type_config['sizes'])) {
             $job = new ResizeImages($file, $type_config);
             // Check if we have to queue the resize of the image
-            if ($this->config['queue']) {
-                \Queue::pushOn($this->config['queue_name'], $job);
+            if ($this->config['queue'] || $queue) {
+                \Queue::pushOn($queue ?? $this->config['queue_name'], $job);
             } else {
                 $job->handle();
             }
